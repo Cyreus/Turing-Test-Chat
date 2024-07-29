@@ -11,7 +11,7 @@ My application is a web-based chat application designed to teach the Turing test
 
 ## Screenshots
 
-![GUI](https://hizliresim.com/syy76gk)
+![GUI]([url=https://hizliresim.com/llmj4bg][img]https://i.hizliresim.com/llmj4bg.png[/img][/url])
 
 ![GUI](https://hizliresim.com/194lu7a)
 
