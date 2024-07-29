@@ -7,7 +7,7 @@ Turing proposed a test, known as the Turing Test, to determine whether a machine
 
 ## Explanation
 
-My application is a web-based chat application designed to teach the Turing test. The responses provided are analyzed at the end of the program and recorded in the database. I used WebSocket as the communication protocol."
+My application is a web-based chat application designed to teach the Turing test. The responses provided are analyzed at the end of the program and recorded in the database. I used WebSocket as the communication protocol.
 
 ## Screenshots
 
