@@ -1,6 +1,6 @@
 import random
 import time
-from flask import Flask, render_template
+from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO
 from dotenv import load_dotenv
 import os
@@ -95,9 +95,44 @@ def another():
     return render_template('another.html')
 
 
+@app.route('/log_result', methods=['POST'])
+def log_result():
+    data = request.json
+    user = data['user']
+    text = data['text']
+    result = data['result']
+    correct_answers = data['correctAnswers']
+    incorrect_answers = data['incorrectAnswers']
+
+    # Calculate the ratio of correct to incorrect answers
+    if incorrect_answers == 0:
+        ratio = 'Infinity'  # Avoid division by zero
+    else:
+        ratio = correct_answers / incorrect_answers
+
+    # Write to CSV
+    with open('results.csv', 'a', newline='') as csvfile:
+        fieldnames = ['user', 'text', 'result', 'correctAnswers', 'incorrectAnswers', 'ratio']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        # Write the header if the file is new
+        if csvfile.tell() == 0:
+            writer.writeheader()
+
+        writer.writerow({
+            'user': user,
+            'text': text,
+            'result': result,
+            'correctAnswers': correct_answers,
+            'incorrectAnswers': incorrect_answers,
+            'ratio': ratio
+        })
+
+    return jsonify(success=True)
+
 def call_openai_api(msg):
     with app.app_context():
-        time.sleep(10)
+        time.sleep(1.5)
         try:
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -110,7 +145,8 @@ def call_openai_api(msg):
             )
             gpt_response = response.choices[0].message.content
 
-            socketio.emit('message', {"user": "Tester", "text": gpt_response})
+            # Emit message with AI identifier
+            socketio.emit('message', {"user": "Tester", "text": gpt_response, "is_ai": True})
 
             analysis_result = analyze_message("AI", gpt_response, is_human=False)
             log_analysis_to_csv(analysis_result)
@@ -118,8 +154,19 @@ def call_openai_api(msg):
         except Exception as e:
             print(f"OpenAI API error: {e}")
             socketio.emit('message',
-                          {"user": "Tester", "text": "Sorry, I couldn't process your request at the moment."})
+                          {"user": "Tester", "text": "Sorry, I couldn't process your request at the moment.",
+                           "is_ai": True})
 
+@app.route('/check_message', methods=['POST'])
+def check_message():
+    data = request.json
+    user = data['user']
+    text = data['text']
+    guess = data['guess']
+    is_ai = user == "AI"
+    correct = (guess == 'yes' and is_ai) or (guess == 'no' and not is_ai)
+    result = "Correct!" if correct else "Incorrect!"
+    return jsonify(result=result)
 
 @socketio.on('message')
 def handle_message(msg):
@@ -130,11 +177,11 @@ def handle_message(msg):
         analysis_result = analyze_message(msg['user'], msg['text'], is_human=True)
         log_analysis_to_csv(analysis_result)
     else:
-        if random.random() < 0.5:
+        if random.random() < 0.80:
             api_thread = threading.Thread(target=call_openai_api, args=(msg,))
             api_thread.daemon = True
             api_thread.start()
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, use_reloader=True, log_output=True)
+    socketio.run(app, debug=True, use_reloader=True, log_output=True,allow_unsafe_werkzeug=True)

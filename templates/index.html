@@ -26,7 +26,8 @@
             display: block;
             width: 100%;
         }
-        #send{
+
+        #send {
             display: block;
             width: 100%;
         }
@@ -35,6 +36,22 @@
 <body>
     <h1 id="heads" style="justify-content: center; text-align: center; align-items: center;margin-top: 20px;">Welcome to Turing Test!</h1>
     <div class="container">
+        <div class="modal fade" id="resultModal" tabindex="-1" role="dialog" aria-labelledby="resultModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="resultModalLabel">Result</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="modalBody"></div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id="username-section" class="row mt-5">
             <div class="col-md-6 offset-md-3">
                 <div class="card">
@@ -42,7 +59,6 @@
                     <div class="card-body">
                         <label for="username"></label>
                         <input type="text" id="username" class="form-control" placeholder="Enter your username...">
-
                     </div>
                     <br><br><br>
                     <div class="card-footer">
@@ -70,9 +86,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
     <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
     <script>
         let socket = io();
         let username;
+        let score = 0;
+        let correctAnswers = 0;
+        let incorrectAnswers = 0;
 
         document.getElementById('enter-chat').onclick = function() {
             username = document.getElementById('username').value;
@@ -100,6 +121,81 @@
             messageItem.textContent = `${msg.user}: ${msg.text}`;
             messages.appendChild(messageItem);
         });
+
+        socket.on('message', function (msg) {
+            const messageDiv = document.createElement('div');
+
+            if (msg.user === 'Tester') {
+                var innerHTML = "<p><strong>" + "" + "</strong></p>";
+                innerHTML += '<div>' +
+                        '<label>' +
+                        '<input type="radio" name="aiCheck-' + msg.text + '" value="yes"> Yes' +
+                        '</label>' +
+                         '&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp' +
+                        '<label>' +
+                        '<input type="radio" name="aiCheck-' + msg.text + '" value="no"> No' +
+                        '</label>' +
+                        '</div>' +
+                        '<button class="btn btn-danger" onclick="checkMessage(\'' + msg.user + '\', \'' + msg.text + '\', ' + msg.is_ai + ')">Submit</button>';
+            } else {
+                var innerHTML = "<p><strong>" + "" + "</p>";
+            }
+
+            messageDiv.innerHTML = innerHTML;
+            document.getElementById('messages').appendChild(messageDiv);
+        });
+
+        function checkMessage(user, text, is_ai) {
+            const radios = document.getElementsByName("aiCheck-" + text);
+            let selectedValue;
+            for (const radio of radios) {
+                if (radio.checked) {
+                    selectedValue = radio.value;
+                    break;
+                }
+            }
+            if (selectedValue) {
+                const result = (selectedValue === 'yes' && is_ai) || (selectedValue === 'no' && !is_ai) ? "Correct!" : "Incorrect!";
+                document.getElementById('modalBody').innerText = result;
+                $('#resultModal').modal('show');
+
+                if (result === "Correct!") {
+                    score +=10;
+                    correctAnswers++;
+                }
+                else if(result === "Incorrect!"){
+                    score-=10
+                    incorrectAnswers++;
+                }
+                const submitButton = document.querySelector(`button[onclick="checkMessage('${user}', '${text}', ${is_ai})"]`);
+                if (submitButton) {
+                    submitButton.remove();
+                }
+                fetch('/log_result', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                user: user,
+                                text: text,
+                                result: result,
+                                correctAnswers: correctAnswers,
+                                incorrectAnswers: incorrectAnswers
+                            })
+                        });
+
+                if(score===100){
+                    alert("Congratulations! You've reached the maximum score of 100!");
+                    document.getElementById('send').disabled = true;
+                    document.querySelectorAll('input[type="radio"]').forEach(radio => radio.disabled = true);
+
+                }
+
+
+                document.getElementById('modalBody').innerHTML = result + '<br>Total score: ' + score;
+            }
+        }
     </script>
 </body>
 </html>
