@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <style>
+        .other-message {
+            background: limegreen;
+            color: #fff;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 10px;
+        }
+
+        .my-message {
+            background: darkgrey;
+            color: #fff;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 10px;
+        }
+
+        .chatgpt-message {
+            background: lightblue;
+            color: #000;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="username-section" class="row mt-5">
+            <div class="col-md-6 offset-md-3">
+                <div class="card">
+                    <div class="card-header">Enter Username</div>
+                    <div class="card-body">
+                        <label for="username"></label>
+                        <input type="text" id="username" class="form-control" placeholder="Enter your username...">
+                        <button id="enter-chat" class="btn btn-primary mt-2">Enter Chat</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="chat-section" class="row" style="display:none;">
+            <div class="col-md-6 offset-md-3">
+                <div class="card mt-5">
+                    <div class="card-header">Chat</div>
+                    <div class="card-body" id="messages"></div>
+                    <div class="card-footer">
+                        <label for="message"></label>
+                        <input type="text" id="message" class="form-control" placeholder="Type your message here...">
+                        <button id="send" class="btn btn-primary mt-2">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
+        let socket = io();
+        let username;
+
+        document.getElementById('enter-chat').onclick = function() {
+            username = document.getElementById('username').value;
+            if(username) {
+                document.getElementById('username-section').style.display = 'none';
+                document.getElementById('chat-section').style.display = 'block';
+            }
+        };
+
+        document.getElementById('send').onclick = function() {
+            let message = {
+                user: username,
+                text: document.getElementById('message').value
+            };
+            socket.send(message);
+            document.getElementById('message').value = '';
+        };
+
+        socket.on('message', function(msg) {
+            let messages = document.getElementById('messages');
+            const messageClass = msg.user === username ? "my-message" : msg.user === "ChatGPT" ? "chatgpt-message" : "other-message";
+            let messageItem = document.createElement('div');
+            messageItem.className = messageClass;
+            messageItem.textContent = `${msg.user}: ${msg.text}`;
+            messages.appendChild(messageItem);
+        });
+    </script>
+</body>
+</html>
