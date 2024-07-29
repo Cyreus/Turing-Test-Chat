@@ -28,7 +28,7 @@ message_data = defaultdict(list)
 
 csv_headers = ['user', 'message', 'is_structured', 'contains_personal_comments', 'message_length', 'response_type']
 
-client = OpenAI(api_key="")
+client = OpenAI(api_key="your_key")
 
 with open('chat_analysis.csv', 'w', newline='') as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=csv_headers)
