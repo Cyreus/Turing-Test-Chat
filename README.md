@@ -9,9 +9,4 @@ Turing proposed a test, known as the Turing Test, to determine whether a machine
 
 My application is a web-based chat application designed to teach the Turing test. The responses provided are analyzed at the end of the program and recorded in the database. I used WebSocket as the communication protocol.
 
-## Screenshots
-
-![GUI]([url=https://hizliresim.com/llmj4bg][img]https://i.hizliresim.com/llmj4bg.png[/img][/url])
-
-![screenshot](https://hizliresim.com/194lu7a)
 
